@@ -15,18 +15,28 @@
  */
 
 buildscript {
+    ext {
+        kotlin_version = '1.2.71'
+        disruptor_version = '3.3.7'
+        junit_version = '4.12'
+    }
     repositories {
         mavenLocal()
         maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
         maven { url "https://plugins.gradle.org/m2/" }
         mavenCentral()
     }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
+    }
 }
 
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version "1.2.71"
+    id "org.jetbrains.kotlin.jvm" version "1.2.71"
 }
-
+apply plugin: "org.jetbrains.kotlin.jvm"
 apply plugin: 'java'
 apply plugin: 'osgi'
 apply plugin: 'maven'
@@ -34,6 +44,7 @@ apply plugin: 'signing'
 apply plugin: 'eclipse'   // Only used so the Eclipse STS Gradle plugin can see the 'perf' source set dependencies. :-(
 //apply plugin: 'checkstyle'
 apply plugin: 'idea'
+apply plugin: 'kotlin'
 
 
 defaultTasks 'build'
@@ -88,12 +99,13 @@ dependencies {
 
 //    checkstyle 'com.puppycrawl.tools:checkstyle:8.12'
     testCompile 'junit:junit:4.12'
-    testCompile 'com.github.javafaker:javafaker:0.16'
 
     perfCompile 'org.hdrhistogram:HdrHistogram:2.1.10'
     perfCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     perfCompile "org.jetbrains.kotlin:kotlin-reflect"
     perfCompile "org.jetbrains.kotlin:kotlin-test"
+    perfCompile 'junit:junit:4.12'
+    perfCompile 'com.github.javafaker:javafaker:0.16'
 
 }
 
