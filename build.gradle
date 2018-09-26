@@ -20,6 +20,7 @@ apply plugin: 'signing'
 apply plugin: 'eclipse'   // Only used so the Eclipse STS Gradle plugin can see the 'perf' source set dependencies. :-(
 apply plugin: 'checkstyle'
 apply plugin: 'idea'
+apply plugin: 'kotlin'
 
 defaultTasks 'build'
 
@@ -27,6 +28,7 @@ group = 'com.lmax'
 version = new Version(major: 3, minor: 4, revision: 3)
 
 ext {
+    kotlin_version = '1.2.70'
     fullName = 'Disruptor Framework'
     fullDescription = 'Disruptor - Concurrent Programming Framework'
     teamName = 'LMAX Disruptor Development Team'
@@ -34,35 +36,64 @@ ext {
     sourceUrl = 'git@github.com:LMAX-Exchange/disruptor.git'
 
     javaCompilerExecutable = System.env['JAVA_HOME'] ? System.env['JAVA_HOME'] + '/bin/javac' : 'javac'
+    println("javaCompilerExecutable${javaCompilerExecutable}")
 
     if (!project.hasProperty('sonatypeUrl')) sonatypeUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
     if (!project.hasProperty('sonatypeUsername')) sonatypeUsername = ''
     if (!project.hasProperty('sonatypePassword')) sonatypePassword = ''
+}
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+buildscript {
+    ext {
+        kotlin_version = '1.2.70'
+    }
+    repositories {
+        mavenLocal()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
+    }
 }
 
 sourceSets {
     perf.java.srcDir file('src/perftest/java')
 }
 
-eclipse.classpath.plusConfigurations += [ sourceSets.perf.compileClasspath ]
+eclipse.classpath.plusConfigurations += [sourceSets.perf.compileClasspath]
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
     checkstyle 'com.puppycrawl.tools:checkstyle:8.12'
     testCompile 'junit:junit:4.12'
+    testCompile 'com.github.javafaker:javafaker:0.16'
     perfCompile 'org.hdrhistogram:HdrHistogram:2.1.10'
 }
 
 idea.module {
     testSourceDirs += sourceSets.perf.allSource.srcDirs
-    scopes.TEST.plus += [ configurations.perfCompile ]
+    scopes.TEST.plus += [configurations.perfCompile]
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 
 compileJava {
@@ -96,10 +127,10 @@ javadoc {
 
 jar {
     manifest.attributes('Built-By': System.properties['user.name'],
-                        'Bundle-Name': fullName,
-                        'Bundle-Vendor': teamName,
-                        'Bundle-Description': fullDescription,
-                        'Bundle-DocURL': siteUrl)
+            'Bundle-Name': fullName,
+            'Bundle-Vendor': teamName,
+            'Bundle-Description': fullDescription,
+            'Bundle-DocURL': siteUrl)
 }
 
 task sourcesJar(type: Jar) {
@@ -172,10 +203,6 @@ task perfJar(type: Jar) {
     from sourceSets.perf.output
     from sourceSets.test.output
     with jar
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.10'
 }
 
 class Version {

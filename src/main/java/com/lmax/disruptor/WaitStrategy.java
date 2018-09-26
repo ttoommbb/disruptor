@@ -17,7 +17,7 @@ package com.lmax.disruptor;
 
 
 /**
- * Strategy employed for making {@link EventProcessor}s wait on a cursor {@link Sequence}.
+ * Stratgy employed for making {@link EventProcessor}s wait on a cursor {@link Sequence}.
  */
 public interface WaitStrategy
 {
