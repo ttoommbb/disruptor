@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+buildscript {
+    repositories {
+        mavenLocal()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        maven { url "https://plugins.gradle.org/m2/" }
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version "1.2.71"
+}
+
 apply plugin: 'java'
 apply plugin: 'osgi'
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'eclipse'   // Only used so the Eclipse STS Gradle plugin can see the 'perf' source set dependencies. :-(
-apply plugin: 'checkstyle'
+//apply plugin: 'checkstyle'
 apply plugin: 'idea'
-apply plugin: 'kotlin'
+
 
 defaultTasks 'build'
 
@@ -28,7 +42,6 @@ group = 'com.lmax'
 version = new Version(major: 3, minor: 4, revision: 3)
 
 ext {
-    kotlin_version = '1.2.70'
     fullName = 'Disruptor Framework'
     fullDescription = 'Disruptor - Concurrent Programming Framework'
     teamName = 'LMAX Disruptor Development Team'
@@ -49,24 +62,15 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-buildscript {
-    ext {
-        kotlin_version = '1.2.70'
-    }
-    repositories {
-        mavenLocal()
-        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
-    }
-}
+
 
 sourceSets {
+    main.java.srcDirs += 'src/main/java'
+    main.kotlin.srcDirs += 'src/main/kotlin'
     perf.java.srcDir file('src/perftest/java')
+    perf.java.srcDir file('src/main/java')
+    perf.kotlin.srcDir file('src/main/kotlin')
+    perf.kotlin.srcDir file('src/perftest/kotlin')
 }
 
 eclipse.classpath.plusConfigurations += [sourceSets.perf.compileClasspath]
@@ -78,13 +82,19 @@ repositories {
 
 dependencies {
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compile "org.jetbrains.kotlin:kotlin-reflect"
+    testCompile "org.jetbrains.kotlin:kotlin-test"
 
-    checkstyle 'com.puppycrawl.tools:checkstyle:8.12'
+//    checkstyle 'com.puppycrawl.tools:checkstyle:8.12'
     testCompile 'junit:junit:4.12'
     testCompile 'com.github.javafaker:javafaker:0.16'
+
     perfCompile 'org.hdrhistogram:HdrHistogram:2.1.10'
+    perfCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    perfCompile "org.jetbrains.kotlin:kotlin-reflect"
+    perfCompile "org.jetbrains.kotlin:kotlin-test"
+
 }
 
 idea.module {

@@ -3,6 +3,8 @@ package com.lmax.disruptor.immutable
 import com.lmax.disruptor.SingleProducerSequencer
 import com.lmax.disruptor.YieldingWaitStrategy
 import java.util.concurrent.locks.LockSupport
+import kotlin.system.measureNanoTime
+import kotlin.system.measureTimeMillis
 
 class CustomPerformanceTest {
     private val ringBuffer: CustomRingBuffer<SimpleEvent> = CustomRingBuffer(SingleProducerSequencer(Constants.SIZE, YieldingWaitStrategy()))
@@ -41,7 +43,11 @@ class CustomPerformanceTest {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            CustomPerformanceTest().run()
+            measureNanoTime {
+                CustomPerformanceTest().run()
+            }.apply {
+                println("$this nanos")
+            }
         }
     }
 

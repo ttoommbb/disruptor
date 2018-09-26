@@ -7,14 +7,11 @@ import com.lmax.disruptor.LifecycleAware
 import com.lmax.disruptor.Sequencer
 
 class CustomRingBuffer<T>(private val sequencer: Sequencer) : DataProvider<EventAccessor<T>>, EventAccessor<T> {
-    private val buffer: Array<Any>
-    private val mask: Int
 
-    private class AccessorEventHandler<T> private constructor(private val handler: EventHandler<T>) : EventHandler<EventAccessor<T>>, LifecycleAware {
-        private val lifecycle: LifecycleAware?
-
-        init {
-            lifecycle = if (handler is LifecycleAware) handler else null
+    private class AccessorEventHandler<T> constructor(private val handler: EventHandler<T>) : EventHandler<EventAccessor<T>>, LifecycleAware {
+        private val lifecycle: LifecycleAware? = when (handler) {
+            is LifecycleAware -> handler
+            else -> null
         }
 
         @Throws(Exception::class)
@@ -31,10 +28,9 @@ class CustomRingBuffer<T>(private val sequencer: Sequencer) : DataProvider<Event
         }
     }
 
-    init {
-        buffer = arrayOfNulls(sequencer.bufferSize)
-        mask = sequencer.bufferSize - 1
-    }
+    @Suppress("UNCHECKED_CAST")
+    private val buffer: Array<T?> = arrayOfNulls<Any>(sequencer.bufferSize) as Array<T?>
+    private val mask: Int = sequencer.bufferSize - 1
 
     private fun index(sequence: Long): Int {
         return sequence.toInt() and mask
@@ -49,10 +45,10 @@ class CustomRingBuffer<T>(private val sequencer: Sequencer) : DataProvider<Event
     override fun take(sequence: Long): T {
         val index = index(sequence)
 
-        val t = buffer[index] as T
+        val t = buffer[index]
         buffer[index] = null
 
-        return t
+        return t!!
     }
 
     override fun get(sequence: Long): EventAccessor<T> {

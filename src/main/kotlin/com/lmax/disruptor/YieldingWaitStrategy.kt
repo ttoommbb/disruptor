@@ -26,19 +26,17 @@ package com.lmax.disruptor
  */
 class YieldingWaitStrategy : WaitStrategy {
 
-    @Throws(AlertException::class)
+    @Throws(AlertException::class, InterruptedException::class)
     override fun waitFor(
             sequence: Long, cursor: Sequence, dependentSequence: Sequence, barrier: SequenceBarrier): Long {
-        var availableSequence: Long = -1
+        var availableSequence: Long
+        var counter = SPIN_TRIES
 
-        for (i in 0 until SPIN_TRIES) {
+        availableSequence = dependentSequence.get()
+        while (availableSequence < sequence) {
+            counter = applyWaitMethod(barrier, counter)
             availableSequence = dependentSequence.get()
-            if (availableSequence >= sequence) {
-                return availableSequence
-            }
-            barrier.checkAlert()
         }
-        Thread.yield()
 
         return availableSequence
     }
@@ -48,10 +46,11 @@ class YieldingWaitStrategy : WaitStrategy {
     @Throws(AlertException::class)
     private fun applyWaitMethod(barrier: SequenceBarrier, counter: Int): Int {
         barrier.checkAlert()
+
         return when (counter) {
             0 -> {
                 Thread.yield()
-                0
+                counter
             }
             else -> counter -1
         }
