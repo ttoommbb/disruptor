@@ -88,6 +88,7 @@ eclipse.classpath.plusConfigurations += [sourceSets.perf.compileClasspath]
 
 repositories {
     mavenLocal()
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
     mavenCentral()
 }
 
@@ -99,6 +100,12 @@ dependencies {
 
 //    checkstyle 'com.puppycrawl.tools:checkstyle:8.12'
     testCompile 'junit:junit:4.12'
+    testCompile 'org.assertj:assertj-core:3.9.1'
+    testCompile 'commons-codec:commons-codec:1.10'
+    testCompile 'commons-io:commons-io:2.6'
+    testCompile 'org.apache.commons:commons-lang3:3.8.1'
+    testCompile 'org.springframework.boot:spring-boot-starter-logging:2.0.3.RELEASE'
+    testCompile 'com.google.guava:guava:23.0'
 
     perfCompile 'org.hdrhistogram:HdrHistogram:2.1.10'
     perfCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"

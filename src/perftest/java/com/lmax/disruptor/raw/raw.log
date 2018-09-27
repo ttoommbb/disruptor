@@ -1,0 +1,17 @@
+java:
+Run 0, Disruptor=58,309,037 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 1, Disruptor=149,812,734 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 2, Disruptor=212,765,957 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 3, Disruptor=208,116,545 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 4, Disruptor=184,842,883 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 5, Disruptor=191,570,881 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 6, Disruptor=176,678,445 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+
+kotlin:
+Run 0, Disruptor=147,492,625 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 1, Disruptor=51,759,834 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 2, Disruptor=422,832,980 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 3, Disruptor=381,679,389 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 4, Disruptor=286,944,045 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 5, Disruptor=292,397,660 ops/sec BatchPercent=0.00% AverageBatchSize=-1
+Run 6, Disruptor=302,114,803 ops/sec BatchPercent=0.00% AverageBatchSize=-1
