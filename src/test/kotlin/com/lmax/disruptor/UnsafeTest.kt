@@ -128,8 +128,9 @@ class UnsafeTest {
     fun `show jol info of sample class`() {
         println(ClassLayout.parseClass(SampleClass::class.java).toPrintable())
 
-        val sampleClass = SampleClass(Short.MIN_VALUE, 5, Long.MAX_VALUE, true)
-        println(GraphLayout.parseInstance(sampleClass).toPrintable())
+        val sampleClassInst = SampleClass(Short.MIN_VALUE, 5, Long.MAX_VALUE, true)
+        println(GraphLayout.parseInstance(sampleClassInst).toPrintable())
+        println(ClassLayout.parseInstance(sampleClassInst).toPrintable())
     }
 
     @Test
@@ -203,6 +204,14 @@ class UnsafeTest {
         //return (E) UNSAFE.getObject(entries, REF_ARRAY_BASE + ((sequence & indexMask) << REF_ELEMENT_SHIFT));
     }
  */
+    }
+    
+    @Test
+    fun `get vm details`() {
+//        System.out.println(VMSupport.vmDetails())
+        val i = 23
+        println(ClassLayout.parseInstance(i)
+                .toPrintable())
     }
 
     private fun printDump(name: String, limit: Int, address: Long) {
