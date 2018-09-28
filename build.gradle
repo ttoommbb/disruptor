@@ -106,6 +106,7 @@ dependencies {
     testCompile 'org.apache.commons:commons-lang3:3.8.1'
     testCompile 'org.springframework.boot:spring-boot-starter-logging:2.0.3.RELEASE'
     testCompile 'com.google.guava:guava:23.0'
+    testCompile 'org.openjdk.jol:jol-core:0.9'
 
     perfCompile 'org.hdrhistogram:HdrHistogram:2.1.10'
     perfCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"

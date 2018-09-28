@@ -9,6 +9,9 @@ import org.apache.commons.io.HexDump
 import org.apache.commons.lang3.reflect.FieldUtils
 import org.assertj.core.api.Assertions
 import org.junit.Test
+import org.openjdk.jol.info.ClassLayout
+import org.openjdk.jol.info.GraphLayout
+import org.openjdk.jol.vm.VM
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.lang.reflect.Field
@@ -28,6 +31,8 @@ class UnsafeTest {
 //    }
     private val unsafe = Util.getUnsafe()
 
+    data class SampleClass(val s: Short, val i: Int, val l: Long, val b: Boolean)
+
     @Test
     fun `check unsafe acquired`() {
         Assertions.assertThat(unsafe).isNotNull
@@ -38,7 +43,7 @@ class UnsafeTest {
         var allocatedAddress = unsafe.allocateMemory(1L)
         unsafe.putByte(allocatedAddress, 100.toByte())
         val shortValue = unsafe.getByte(allocatedAddress)
-        println(StringBuilder().append("Address:").append(allocatedAddress).append(" Value:").append(shortValue.toInt()))
+        println(StringBuilder().append("Address:").append(allocatedAddress.toHexString()).append(" Value:").append(shortValue.toInt()))
         println("long value in the address: ${unsafe.getLong(allocatedAddress)}")
         /**
          * 重新分配一个long
@@ -46,7 +51,7 @@ class UnsafeTest {
         allocatedAddress = unsafe.reallocateMemory(allocatedAddress, 8L)
         unsafe.putLong(allocatedAddress, 1024L)
         var longValue = unsafe.getLong(allocatedAddress)
-        println(StringBuilder().append("Address:").append(allocatedAddress).append(" Value:").append(longValue))
+        println(StringBuilder().append("Address:").append(allocatedAddress.toHexString()).append(" Value:").append(longValue))
         println("int value in the address: ${unsafe.getByte(allocatedAddress)}")
         println("int value in the address: ${unsafe.getByte(allocatedAddress + 1)}")
         println("int value in the address: ${unsafe.getByte(allocatedAddress + 2)}")
@@ -56,7 +61,7 @@ class UnsafeTest {
          */
         unsafe.freeMemory(allocatedAddress)
         longValue = unsafe.getLong(allocatedAddress)
-        println(StringBuilder().append("Address:").append(allocatedAddress).append(" Value:").append(longValue)) //keep changes.
+        println(StringBuilder().append("Address:").append(allocatedAddress.toHexString()).append(" Value:").append(longValue)) //keep changes.
 
     }
 
@@ -76,7 +81,6 @@ class UnsafeTest {
      */
     @Test
     fun `class field test`() {
-        data class SampleClass(val s: Short, val i: Int, val l: Long, val b: Boolean)
 
         fun lazyField(name: String): Lazy<Field> {
             return lazy {
@@ -94,7 +98,7 @@ class UnsafeTest {
         println("i field offset:$iFiledAddressShift")
         println("l field offset:${unsafe.objectFieldOffset(lField)}")
         println("b field offset:${unsafe.objectFieldOffset(bField)}")
-        val sampleClass = SampleClass(Short.MIN_VALUE, 5, Long.MAX_VALUE, true)
+        val sampleClass = SampleClass(Short.MIN_VALUE, 5, 111L, true)
 
         val data = ByteArray(30)
         repeat(30) {
@@ -118,7 +122,18 @@ class UnsafeTest {
 
         //TODO: UNSIGNED LONG
         ULongValue(-1).toString().apply(::println)
+    }
 
+    @Test
+    fun `show jol info of sample class`() {
+        println(ClassLayout.parseClass(SampleClass::class.java).toPrintable())
+
+        val sampleClass = SampleClass(Short.MIN_VALUE, 5, Long.MAX_VALUE, true)
+        println(GraphLayout.parseInstance(sampleClass).toPrintable())
+    }
+
+    @Test
+    fun `test get address of obj, inspect using dump`() {
         //TODO: get field offset
         val arrayBaseOffset = unsafe.arrayBaseOffset(Array<Any>::class.java)
         println("arrayBaseOffset: $arrayBaseOffset")
@@ -126,24 +141,39 @@ class UnsafeTest {
         println("arrayIndexScale: $arrayIndexScale")
 
 
+        val sampleClass = SampleClass(Short.MIN_VALUE, 5, Long.MAX_VALUE, true)
+        val sampleArr = arrayOf(sampleClass, sampleClass, sampleClass)
+        val narrowOopShift = 3
+        val sampleAdd = unsafe.getInt(sampleArr, arrayBaseOffset.toLong()).toLong() and 0xFFFFFFFFL shl narrowOopShift
+        val sample2Add = unsafe.getInt(sampleArr, arrayBaseOffset + arrayIndexScale.toLong()).toLong() and 0xFFFFFFFFL shl narrowOopShift
+        val sample3Add = unsafe.getInt(sampleArr, arrayBaseOffset + arrayIndexScale * 2.toLong()).toLong() and 0xFFFFFFFFL shl narrowOopShift
+        println("sampleAdd = ${sampleAdd.toHexString()}")
+        assertEquals(sampleAdd, sample2Add)
+        assertEquals(sampleAdd, sample3Add)
+
+        printDump("sampleArr", sampleArr, VM.current().sizeOf(sampleArr).toInt() + VM.current().arrayHeaderSize())
+        printDump("sampleClass", sampleClass, VM.current().sizeOf(sampleClass).toInt() + VM.current().objectHeaderSize())
+        val sampleAddFromJol = GraphLayout.parseInstance(sampleClass).startAddress()
+        println("sampleAddFromJol: ${sampleAddFromJol.toHexString()}")
+        assertEquals(sampleAdd, sampleAddFromJol)
+        printDump("dump from sampleAddFromJol: ", VM.current().sizeOf(sampleClass).toInt() + VM.current().objectHeaderSize(), sampleAddFromJol)
+    }
+
+    @Test
+    fun `heap dump test`() {
+        //need to check file non exist
+        HeapDumper.dumpHeap("heap.hprof", true)
+    }
+
+    @Test
+    fun `print RingBufferFields`() {
+
         RingBufferFields::class.let {
             it.printField("BUFFER_PAD")//32
             it.printField("REF_ARRAY_BASE")//144
             it.printField("REF_ELEMENT_SHIFT")//2
         }
-
-        val sampleArr = arrayOf(sampleClass, sampleClass, sampleClass)
-        val sampleAdd = unsafe.getInt(sampleArr, arrayBaseOffset)
-        val sample2Add = unsafe.getInt(sampleArr, arrayBaseOffset + arrayIndexScale)
-        val sample3Add = unsafe.getInt(sampleArr, arrayBaseOffset + arrayIndexScale*2)
-        printDump("sampleArr", sampleArr, 50)
-        assertEquals(sampleAdd, sample2Add)
-        assertEquals(sampleAdd, sample3Add)
-        println("sampleAdd = ${sampleAdd.toHexString()}")
-//        println("sample2Add = ${sample2Add.toHexString()}")
-//        println("sample3Add = ${sample3Add.toHexString()}")
-
-/*
+        /*
  private static final int BUFFER_PAD;
     private static final long REF_ARRAY_BASE;
     private static final int REF_ELEMENT_SHIFT;
@@ -175,15 +205,33 @@ class UnsafeTest {
  */
     }
 
-    private fun printDump(name: String, data: Any, limit: Int) {
+    private fun printDump(name: String, limit: Int, address: Long) {
         println("----------ready print dump: $name------------")
         val bytes = ByteArray(limit)
         repeat(limit) {
-            bytes[it] = unsafe.getByte(data, it)
+            bytes[it] = unsafe.getByte(address + it)
         }
 
         val stream = ByteArrayOutputStream(0)
-        HexDump.dump(bytes, 0, PrintStream(stream), 0)
+        HexDump.dump(bytes, address, PrintStream(stream), 0)
+        val dump = stream.toString(Charsets.UTF_8.name())
+
+        dump.ansi(0, 4, ANSIConstants.RED_FG)
+                .print()
+        println("----------ready print dump end: $name------------")
+    }
+
+
+    private fun printDump(name: String, data: Any, limit: Int) {
+        println("----------!ready print dump: $name------------")
+        println(GraphLayout.parseInstance(data).toPrintable())
+        val bytes = ByteArray(limit)
+        repeat(limit) {
+            bytes[it] = unsafe.getByte(data, it.toLong())
+        }
+
+        val stream = ByteArrayOutputStream(0)
+        HexDump.dump(bytes, VM.current().addressOf(data), PrintStream(stream), 0)
         val dump = stream.toString(Charsets.UTF_8.name())
 
         dump.ansi(0, 4, ANSIConstants.RED_FG)
@@ -206,6 +254,6 @@ class UnsafeTest {
     }
 }
 
-private fun Long.toHexString(): String = Hex.encodeHexString(ByteBuffer.allocate(java.lang.Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(this).array())
-private fun Int.toHexString(): String = Hex.encodeHexString(ByteBuffer.allocate(java.lang.Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(this).array())
+private fun Long.toHexString(): String = "0x" + Hex.encodeHexString(ByteBuffer.allocate(java.lang.Long.BYTES).order(ByteOrder.LITTLE_ENDIAN).putLong(this).array())
+private fun Int.toHexString(): String = "0x" + Hex.encodeHexString(ByteBuffer.allocate(java.lang.Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(this).array())
 
